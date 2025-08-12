@@ -17,7 +17,7 @@ class data_prefetcher():
         self.prefetch = prefetch
         self.device = device
         if prefetch:
-            self.stream = torch.cuda.Stream()
+            #self.stream = torch.cuda.Stream()  # Removed for CPU compatibility
             self.preload()
 
     def preload(self):
@@ -34,8 +34,10 @@ class data_prefetcher():
         # Need to make sure the memory allocated for next_* is not still in use by the main stream
         # at the time we start copying to next_*:
         # self.stream.wait_stream(torch.cuda.current_stream())
-        with torch.cuda.stream(self.stream):
-            self.next_samples, self.next_targets = to_cuda(self.next_samples, self.next_targets, self.device)
+        #with torch.cuda.stream(self.stream):
+            #self.next_samples, self.next_targets = to_cuda(self.next_samples, self.next_targets, self.device)
+        self.next_samples = self.next_samples.to(self.device)
+        self.next_targets = [{k: v.to(self.device) for k, v in t.items()} for t in self.next_targets]
             # more code for the alternative if record_stream() doesn't work:
             # copy_ will record the use of the pinned source tensor in this side stream.
             # self.next_input_gpu.copy_(self.next_input, non_blocking=True)
@@ -50,15 +52,16 @@ class data_prefetcher():
 
     def next(self):
         if self.prefetch:
-            torch.cuda.current_stream().wait_stream(self.stream)
+            #torch.cuda.current_stream().wait_stream(self.stream)  # Removed for CPU
             samples = self.next_samples
             targets = self.next_targets
             if samples is not None:
-                samples.record_stream(torch.cuda.current_stream())
+                pass  # samples.record_stream(torch.cuda.current_stream())  # Removed
             if targets is not None:
-                for t in targets:
-                    for k, v in t.items():
-                        v.record_stream(torch.cuda.current_stream())
+                pass  # Removed CUDA stream recording
+                #for t in targets:
+                #    for k, v in t.items():
+                #        v.record_stream(torch.cuda.current_stream())
             self.preload()
         else:
             try:

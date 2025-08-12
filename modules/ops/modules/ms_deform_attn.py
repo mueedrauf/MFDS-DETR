@@ -18,7 +18,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch.nn.init import xavier_uniform_, constant_
 
-from ..functions import MSDeformAttnFunction
+from ..functions import  ms_deform_attn_core_pytorch
 
 
 def _is_power_of_2(n):
@@ -139,7 +139,7 @@ class MSDeformAttn(nn.Module):
             raise ValueError(
                 'Last dim of reference_points must be 2 or 4, but get {} instead.'.format(reference_points.shape[-1]))
         # output: (N, len_q, 256)
-        output = MSDeformAttnFunction.apply(
-            value, input_spatial_shapes, input_level_start_index, sampling_locations, attention_weights, self.im2col_step)
+        output =  ms_deform_attn_core_pytorch( 
+            value, input_spatial_shapes, sampling_locations, attention_weights)
         output = self.output_proj(output)
         return output
